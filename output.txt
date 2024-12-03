@@ -1,0 +1,449 @@
+.
+├── backend
+│   ├── functions
+│   │   ├── auth
+│   │   └── playlists
+│   ├── tests
+│   └── venv
+│       ├── bin
+│       │   └── __pycache__
+│       ├── include
+│       │   └── python3.12
+│       ├── lib
+│       │   └── python3.12
+│       │       └── site-packages
+│       │           ├── blinker
+│       │           │   └── __pycache__
+│       │           ├── blinker-1.9.0.dist-info
+│       │           ├── cachetools
+│       │           │   └── __pycache__
+│       │           ├── cachetools-5.5.0.dist-info
+│       │           ├── certifi
+│       │           │   └── __pycache__
+│       │           ├── certifi-2024.8.30.dist-info
+│       │           ├── charset_normalizer
+│       │           │   ├── cli
+│       │           │   │   └── __pycache__
+│       │           │   └── __pycache__
+│       │           ├── charset_normalizer-3.4.0.dist-info
+│       │           ├── click
+│       │           │   └── __pycache__
+│       │           ├── click-8.1.7.dist-info
+│       │           ├── cloudevents
+│       │           │   ├── abstract
+│       │           │   │   └── __pycache__
+│       │           │   ├── http
+│       │           │   │   └── __pycache__
+│       │           │   ├── kafka
+│       │           │   │   └── __pycache__
+│       │           │   ├── __pycache__
+│       │           │   ├── pydantic
+│       │           │   │   ├── __pycache__
+│       │           │   │   ├── v1
+│       │           │   │   │   └── __pycache__
+│       │           │   │   └── v2
+│       │           │   │       └── __pycache__
+│       │           │   └── sdk
+│       │           │       ├── converters
+│       │           │       │   └── __pycache__
+│       │           │       ├── event
+│       │           │       │   └── __pycache__
+│       │           │       └── __pycache__
+│       │           ├── cloudevents-1.11.0.dist-info
+│       │           ├── deprecation-2.1.0.dist-info
+│       │           ├── dotenv
+│       │           │   └── __pycache__
+│       │           ├── flask
+│       │           │   ├── json
+│       │           │   │   └── __pycache__
+│       │           │   ├── __pycache__
+│       │           │   └── sansio
+│       │           │       └── __pycache__
+│       │           ├── flask-3.1.0.dist-info
+│       │           ├── functions_framework
+│       │           │   ├── _http
+│       │           │   │   └── __pycache__
+│       │           │   └── __pycache__
+│       │           ├── functions_framework-3.8.2.dist-info
+│       │           ├── google
+│       │           │   ├── api
+│       │           │   │   └── __pycache__
+│       │           │   ├── api_core
+│       │           │   │   ├── future
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── gapic_v1
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── operations_v1
+│       │           │   │   │   ├── __pycache__
+│       │           │   │   │   └── transports
+│       │           │   │   │       └── __pycache__
+│       │           │   │   ├── __pycache__
+│       │           │   │   └── retry
+│       │           │   │       └── __pycache__
+│       │           │   ├── auth
+│       │           │   │   ├── aio
+│       │           │   │   │   ├── __pycache__
+│       │           │   │   │   └── transport
+│       │           │   │   │       └── __pycache__
+│       │           │   │   ├── compute_engine
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── crypt
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── __pycache__
+│       │           │   │   └── transport
+│       │           │   │       └── __pycache__
+│       │           │   ├── cloud
+│       │           │   │   ├── client
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── environment_vars
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── exceptions
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── firestore
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── firestore_admin_v1
+│       │           │   │   │   ├── __pycache__
+│       │           │   │   │   ├── services
+│       │           │   │   │   │   ├── firestore_admin
+│       │           │   │   │   │   │   ├── __pycache__
+│       │           │   │   │   │   │   └── transports
+│       │           │   │   │   │   │       └── __pycache__
+│       │           │   │   │   │   └── __pycache__
+│       │           │   │   │   └── types
+│       │           │   │   │       └── __pycache__
+│       │           │   │   ├── firestore_bundle
+│       │           │   │   │   ├── __pycache__
+│       │           │   │   │   ├── services
+│       │           │   │   │   │   └── __pycache__
+│       │           │   │   │   └── types
+│       │           │   │   │       └── __pycache__
+│       │           │   │   ├── firestore_v1
+│       │           │   │   │   ├── __pycache__
+│       │           │   │   │   ├── services
+│       │           │   │   │   │   ├── firestore
+│       │           │   │   │   │   │   ├── __pycache__
+│       │           │   │   │   │   │   └── transports
+│       │           │   │   │   │   │       └── __pycache__
+│       │           │   │   │   │   └── __pycache__
+│       │           │   │   │   └── types
+│       │           │   │   │       └── __pycache__
+│       │           │   │   ├── functions
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── functions_v1
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── functions_v1beta2
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── _helpers
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── _http
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── location
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── obsolete
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── operation
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── __pycache__
+│       │           │   │   └── _testing
+│       │           │   │       └── __pycache__
+│       │           │   ├── gapic
+│       │           │   │   └── metadata
+│       │           │   │       └── __pycache__
+│       │           │   ├── logging
+│       │           │   │   └── type
+│       │           │   │       └── __pycache__
+│       │           │   ├── longrunning
+│       │           │   │   └── __pycache__
+│       │           │   ├── oauth2
+│       │           │   │   └── __pycache__
+│       │           │   ├── protobuf
+│       │           │   │   ├── compiler
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── internal
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── __pycache__
+│       │           │   │   ├── pyext
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── testdata
+│       │           │   │   │   └── __pycache__
+│       │           │   │   └── util
+│       │           │   │       └── __pycache__
+│       │           │   ├── rpc
+│       │           │   │   ├── context
+│       │           │   │   │   └── __pycache__
+│       │           │   │   └── __pycache__
+│       │           │   ├── type
+│       │           │   │   └── __pycache__
+│       │           │   └── _upb
+│       │           ├── google_api_core-2.23.0.dist-info
+│       │           ├── googleapis_common_protos-1.66.0.dist-info
+│       │           ├── google_auth-2.36.0.dist-info
+│       │           ├── google_cloud_core-2.4.1.dist-info
+│       │           ├── google_cloud_firestore-2.19.0.dist-info
+│       │           ├── grpc
+│       │           │   ├── aio
+│       │           │   │   └── __pycache__
+│       │           │   ├── beta
+│       │           │   │   └── __pycache__
+│       │           │   ├── _cython
+│       │           │   │   ├── _credentials
+│       │           │   │   ├── _cygrpc
+│       │           │   │   │   └── __pycache__
+│       │           │   │   └── __pycache__
+│       │           │   ├── experimental
+│       │           │   │   ├── aio
+│       │           │   │   │   └── __pycache__
+│       │           │   │   └── __pycache__
+│       │           │   ├── framework
+│       │           │   │   ├── common
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── foundation
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── interfaces
+│       │           │   │   │   ├── base
+│       │           │   │   │   │   └── __pycache__
+│       │           │   │   │   ├── face
+│       │           │   │   │   │   └── __pycache__
+│       │           │   │   │   └── __pycache__
+│       │           │   │   └── __pycache__
+│       │           │   └── __pycache__
+│       │           ├── grpcio-1.68.0.dist-info
+│       │           ├── grpcio_status-1.68.0.dist-info
+│       │           ├── grpc_status
+│       │           │   └── __pycache__
+│       │           ├── gunicorn
+│       │           │   ├── app
+│       │           │   │   └── __pycache__
+│       │           │   ├── http
+│       │           │   │   └── __pycache__
+│       │           │   ├── instrument
+│       │           │   │   └── __pycache__
+│       │           │   ├── __pycache__
+│       │           │   └── workers
+│       │           │       └── __pycache__
+│       │           ├── gunicorn-23.0.0.dist-info
+│       │           ├── idna
+│       │           │   └── __pycache__
+│       │           ├── idna-3.10.dist-info
+│       │           ├── itsdangerous
+│       │           │   └── __pycache__
+│       │           ├── itsdangerous-2.2.0.dist-info
+│       │           ├── jinja2
+│       │           │   └── __pycache__
+│       │           ├── jinja2-3.1.4.dist-info
+│       │           ├── markupsafe
+│       │           │   └── __pycache__
+│       │           ├── MarkupSafe-3.0.2.dist-info
+│       │           ├── packaging
+│       │           │   ├── licenses
+│       │           │   │   └── __pycache__
+│       │           │   └── __pycache__
+│       │           ├── packaging-24.2.dist-info
+│       │           ├── pip
+│       │           │   ├── _internal
+│       │           │   │   ├── cli
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── commands
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── distributions
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── index
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── locations
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── metadata
+│       │           │   │   │   ├── importlib
+│       │           │   │   │   │   └── __pycache__
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── models
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── network
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── operations
+│       │           │   │   │   ├── build
+│       │           │   │   │   │   └── __pycache__
+│       │           │   │   │   ├── install
+│       │           │   │   │   │   └── __pycache__
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── __pycache__
+│       │           │   │   ├── req
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── resolution
+│       │           │   │   │   ├── legacy
+│       │           │   │   │   │   └── __pycache__
+│       │           │   │   │   ├── __pycache__
+│       │           │   │   │   └── resolvelib
+│       │           │   │   │       └── __pycache__
+│       │           │   │   ├── utils
+│       │           │   │   │   └── __pycache__
+│       │           │   │   └── vcs
+│       │           │   │       └── __pycache__
+│       │           │   ├── __pycache__
+│       │           │   └── _vendor
+│       │           │       ├── cachecontrol
+│       │           │       │   ├── caches
+│       │           │       │   │   └── __pycache__
+│       │           │       │   └── __pycache__
+│       │           │       ├── certifi
+│       │           │       │   └── __pycache__
+│       │           │       ├── chardet
+│       │           │       │   ├── cli
+│       │           │       │   │   └── __pycache__
+│       │           │       │   ├── metadata
+│       │           │       │   │   └── __pycache__
+│       │           │       │   └── __pycache__
+│       │           │       ├── colorama
+│       │           │       │   ├── __pycache__
+│       │           │       │   └── tests
+│       │           │       │       └── __pycache__
+│       │           │       ├── distlib
+│       │           │       │   └── __pycache__
+│       │           │       ├── distro
+│       │           │       │   └── __pycache__
+│       │           │       ├── idna
+│       │           │       │   └── __pycache__
+│       │           │       ├── msgpack
+│       │           │       │   └── __pycache__
+│       │           │       ├── packaging
+│       │           │       │   └── __pycache__
+│       │           │       ├── pkg_resources
+│       │           │       │   └── __pycache__
+│       │           │       ├── platformdirs
+│       │           │       │   └── __pycache__
+│       │           │       ├── __pycache__
+│       │           │       ├── pygments
+│       │           │       │   ├── filters
+│       │           │       │   │   └── __pycache__
+│       │           │       │   ├── formatters
+│       │           │       │   │   └── __pycache__
+│       │           │       │   ├── lexers
+│       │           │       │   │   └── __pycache__
+│       │           │       │   ├── __pycache__
+│       │           │       │   └── styles
+│       │           │       │       └── __pycache__
+│       │           │       ├── pyparsing
+│       │           │       │   ├── diagram
+│       │           │       │   │   └── __pycache__
+│       │           │       │   └── __pycache__
+│       │           │       ├── pyproject_hooks
+│       │           │       │   ├── _in_process
+│       │           │       │   │   └── __pycache__
+│       │           │       │   └── __pycache__
+│       │           │       ├── requests
+│       │           │       │   └── __pycache__
+│       │           │       ├── resolvelib
+│       │           │       │   ├── compat
+│       │           │       │   │   └── __pycache__
+│       │           │       │   └── __pycache__
+│       │           │       ├── rich
+│       │           │       │   └── __pycache__
+│       │           │       ├── tenacity
+│       │           │       │   └── __pycache__
+│       │           │       ├── tomli
+│       │           │       │   └── __pycache__
+│       │           │       ├── truststore
+│       │           │       │   └── __pycache__
+│       │           │       ├── urllib3
+│       │           │       │   ├── contrib
+│       │           │       │   │   ├── __pycache__
+│       │           │       │   │   └── _securetransport
+│       │           │       │   │       └── __pycache__
+│       │           │       │   ├── packages
+│       │           │       │   │   ├── backports
+│       │           │       │   │   │   └── __pycache__
+│       │           │       │   │   └── __pycache__
+│       │           │       │   ├── __pycache__
+│       │           │       │   └── util
+│       │           │       │       └── __pycache__
+│       │           │       └── webencodings
+│       │           │           └── __pycache__
+│       │           ├── pip-24.0.dist-info
+│       │           ├── proto
+│       │           │   ├── marshal
+│       │           │   │   ├── collections
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── __pycache__
+│       │           │   │   └── rules
+│       │           │   │       └── __pycache__
+│       │           │   └── __pycache__
+│       │           ├── protobuf-5.28.3.dist-info
+│       │           ├── proto_plus-1.25.0.dist-info
+│       │           ├── pyasn1
+│       │           │   ├── codec
+│       │           │   │   ├── ber
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── cer
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── der
+│       │           │   │   │   └── __pycache__
+│       │           │   │   ├── native
+│       │           │   │   │   └── __pycache__
+│       │           │   │   └── __pycache__
+│       │           │   ├── compat
+│       │           │   │   └── __pycache__
+│       │           │   ├── __pycache__
+│       │           │   └── type
+│       │           │       └── __pycache__
+│       │           ├── pyasn1-0.6.1.dist-info
+│       │           ├── pyasn1_modules
+│       │           │   └── __pycache__
+│       │           ├── pyasn1_modules-0.4.1.dist-info
+│       │           ├── __pycache__
+│       │           ├── python_dotenv-1.0.1.dist-info
+│       │           ├── requests
+│       │           │   └── __pycache__
+│       │           ├── requests-2.32.3.dist-info
+│       │           ├── rsa
+│       │           │   └── __pycache__
+│       │           ├── rsa-4.9.dist-info
+│       │           ├── urllib3
+│       │           │   ├── contrib
+│       │           │   │   ├── emscripten
+│       │           │   │   │   └── __pycache__
+│       │           │   │   └── __pycache__
+│       │           │   ├── http2
+│       │           │   │   └── __pycache__
+│       │           │   ├── __pycache__
+│       │           │   └── util
+│       │           │       └── __pycache__
+│       │           ├── urllib3-2.2.3.dist-info
+│       │           │   └── licenses
+│       │           ├── watchdog
+│       │           │   ├── observers
+│       │           │   │   └── __pycache__
+│       │           │   ├── __pycache__
+│       │           │   ├── tricks
+│       │           │   │   └── __pycache__
+│       │           │   └── utils
+│       │           │       └── __pycache__
+│       │           ├── watchdog-6.0.0.dist-info
+│       │           ├── werkzeug
+│       │           │   ├── datastructures
+│       │           │   │   └── __pycache__
+│       │           │   ├── debug
+│       │           │   │   ├── __pycache__
+│       │           │   │   └── shared
+│       │           │   ├── middleware
+│       │           │   │   └── __pycache__
+│       │           │   ├── __pycache__
+│       │           │   ├── routing
+│       │           │   │   └── __pycache__
+│       │           │   ├── sansio
+│       │           │   │   └── __pycache__
+│       │           │   └── wrappers
+│       │           │       └── __pycache__
+│       │           └── werkzeug-3.1.3.dist-info
+│       └── lib64 -> lib
+├── firebase
+└── frontend
+    ├── public
+    └── src
+        ├── components
+        │   ├── auth
+        │   ├── common
+        │   └── layout
+        ├── hooks
+        ├── pages
+        └── utils
+
+447 directories

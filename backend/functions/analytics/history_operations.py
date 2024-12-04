@@ -8,7 +8,8 @@ db = firestore.Client()
 
 def process_listening_history(user_id, tracks_data):
     """Process and store listening history for a user"""
-    now = datetime.now()
+    # Make sure we use UTC timezone consistently
+    now = datetime.now(pytz.UTC)
     history = []
     total_ms = 0
     
@@ -19,12 +20,16 @@ def process_listening_history(user_id, tracks_data):
             'date': date.strftime('%a'),
             'count': 0,
             'duration_ms': 0,
-            'timestamp': date.timestamp()
+            'timestamp': date.timestamp()  # UTC timestamp
         })
     
     # Process tracks
     for track in tracks_data:
+        # Convert the played_at string to a timezone-aware datetime
         played_at = datetime.fromisoformat(track['played_at'].replace('Z', '+00:00'))
+        if played_at.tzinfo is None:
+            played_at = pytz.UTC.localize(played_at)
+            
         duration_ms = track['track']['duration_ms']
         total_ms += duration_ms
         
@@ -35,12 +40,17 @@ def process_listening_history(user_id, tracks_data):
     
     total_hours = round(total_ms / (1000 * 60 * 60), 1)
     
-    # Store in Firestore - Fixed set() calls
+    # Store in Firestore
     analytics_ref = db.collection('users').document(user_id).collection('analytics')
     
-    # Store daily history
+    # Store daily history - convert to dict for Firestore
     analytics_ref.document('listening_history').set({
-        'daily_counts': history[::-1],
+        'daily_counts': [{
+            'date': day['date'],
+            'count': day['count'],
+            'duration_ms': day['duration_ms'],
+            'timestamp': day['timestamp']
+        } for day in history[::-1]],
         'last_updated': now
     })
     
@@ -52,7 +62,12 @@ def process_listening_history(user_id, tracks_data):
     })
     
     return {
-        'history': history[::-1],
+        'history': [{
+            'date': day['date'],
+            'count': day['count'],
+            'duration_ms': day['duration_ms'],
+            'timestamp': day['timestamp']
+        } for day in history[::-1]],
         'total_hours': total_hours
     }
     

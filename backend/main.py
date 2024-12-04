@@ -236,12 +236,17 @@ def get_listening_stats(request):
 
 @functions_framework.http
 @cross_origin(**CORS_CONFIG)
-def get_recommendations(request):
+def get_listening_history(request):
+    """Get processed listening history for a user."""
     try:
+        if request.method == "OPTIONS":
+            return ("", 204)
+
         user_id = request.args.get("user_id")
         if not user_id:
             return jsonify({"error": "Missing user_id"}), 400
 
+        # Get user's access token
         user_ref = db.collection("users").document(user_id)
         user_doc = user_ref.get()
 
@@ -249,31 +254,101 @@ def get_recommendations(request):
             return jsonify({"error": "User not found"}), 404
 
         user_data = user_doc.to_dict()
-        access_token = user_data["access_token"]
+        access_token = user_data.get("access_token")
 
-        # Check cache
-        cache_ref = user_ref.collection("recommendations").document("current")
-        cache_doc = cache_ref.get()
-
-        if cache_doc.exists:
-            cache_data = cache_doc.to_dict()
-            if cache_data["expires_at"] > datetime.now():
-                return jsonify({"tracks": cache_data["tracks"]})
-
-        # Get recommendations
-        top_tracks = get_user_top_items(access_token, "tracks")
-        top_artists = get_user_top_items(access_token, "artists")
-
-        seed_tracks = [track["id"] for track in top_tracks[:2]]
-        seed_artists = [artist["id"] for artist in top_artists[:3]]
-
-        recommendations = get_spotify_recommendations(
-            access_token, seed_artists, seed_tracks
+        # Fetch recently played tracks from Spotify
+        response = requests.get(
+            "https://api.spotify.com/v1/me/player/recently-played?limit=50",
+            headers={"Authorization": f"Bearer {access_token}"},
         )
 
-        processed_recommendations = process_recommendations(user_id, recommendations)
+        if response.status_code != 200:
+            return jsonify({"error": "Failed to fetch tracks"}), response.status_code
 
-        return jsonify({"tracks": processed_recommendations})
+        tracks_data = response.json().get("items", [])
+
+        # Process and store history
+        processed_data = process_listening_history(user_id, tracks_data)
+        
+        # Extract directly from processed_data to avoid nesting
+        return jsonify({
+            "history": processed_data["history"],  # This should be the array directly
+            "totalHours": processed_data["total_hours"]
+        }), 200
 
     except Exception as e:
+        print(f"Error in get_listening_history: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    
+@functions_framework.http
+@cross_origin(**CORS_CONFIG)
+def get_recommendations(request):
+    """Get personalized track recommendations based on user's listening history."""
+    print("Starting recommendation function...")
+    start_time = time.time()
+    
+    try:
+        user_id = request.args.get("user_id")
+        print(f"Processing request for user_id: {user_id}")
+        
+        if not user_id:
+            return jsonify({"error": "Missing user_id"}), 400
+
+        # Get user's access token
+        print("Fetching user data...")
+        user_data = get_user_data(user_id)
+        access_token = user_data.get("access_token")
+
+        if not access_token:
+            return jsonify({"error": "User not authenticated"}), 401
+
+        # Get user's recently played tracks
+        print("Fetching recently played tracks...")
+        recent_response = requests.get(
+            "https://api.spotify.com/v1/me/player/recently-played?limit=5",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        
+        if recent_response.status_code != 200:
+            print(f"Error fetching recent tracks: {recent_response.status_code}")
+            print(recent_response.text)
+            return jsonify({"error": "Failed to fetch recent tracks"}), 500
+            
+        recent_tracks = recent_response.json()
+
+        # Get seed tracks from recent history
+        seed_tracks = [item['track']['id'] for item in recent_tracks['items'][:2]]
+        print(f"Using seed tracks: {seed_tracks}")
+
+        # Get recommendations from Spotify
+        print("Fetching recommendations...")
+        rec_response = requests.get(
+            f"https://api.spotify.com/v1/recommendations?seed_tracks={'%2C'.join(seed_tracks)}&limit=10",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        
+        if rec_response.status_code != 200:
+            print(f"Error fetching recommendations: {rec_response.status_code}")
+            print(rec_response.text)
+            return jsonify({"error": "Failed to fetch recommendations"}), 500
+            
+        recommendations = rec_response.json()
+
+        # Format recommendations for frontend
+        tracks = [{
+            'id': track['id'],
+            'name': track['name'],
+            'artists': [artist['name'] for artist in track['artists']],
+            'image_url': track['album']['images'][0]['url'] if track['album']['images'] else None,
+            'preview_url': track['preview_url'],
+            'external_url': track['external_urls']['spotify']
+        } for track in recommendations['tracks']]
+
+        end_time = time.time()
+        print(f"Function completed in {end_time - start_time:.2f} seconds")
+        
+        return jsonify({"tracks": tracks}), 200
+
+    except Exception as e:
+        print(f"Error getting recommendations: {str(e)}")
         return jsonify({"error": str(e)}), 500

@@ -5,7 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { useListeningHistory } from '../hooks/useListeningHistory';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 import { useListeningStats } from '../hooks/useListeningStats';
-import RecommendationSection from '../components/RecommendationSection';
+import RecommendationSection from '../components/recommendations/RecommendationSection';
+import PlaylistModal from '../components/playlists/PlaylistModal';
+import PlaylistSelectionModal from '../components/playlists/PlaylistSelectionModal';
+import { useRecommendations } from '../hooks/useRecommendations';
 
 const Dashboard = () => {
   const { accessToken, loading, error } = useSpotifyToken();
@@ -16,6 +19,11 @@ const Dashboard = () => {
   const { history: listeningHistory, loading: historyLoading } = useListeningHistory();
   const { stats, loading: statsLoading } = useListeningStats();
   const { recommendations, loading: recsLoading, fetchRecommendations } = useRecommendations();
+  const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
+  const [userPlaylists, setUserPlaylists] = useState([]);
+  const [isPlaylistSelectionModalOpen, setIsPlaylistSelectionModalOpen] = useState(false);
+  const [selectedTrack, setSelectedTrack] = useState(null);
+
   useEffect(() => {
     const fetchUserData = async () => {
       if (!accessToken) return;
@@ -51,6 +59,67 @@ const Dashboard = () => {
 
     fetchUserData();
   }, [accessToken]);
+
+  const createPlaylist = async ({ name, description }) => {
+    if (!accessToken) return;
+
+    try {
+      // First, get the user's Spotify ID
+      const userResponse = await fetch('https://api.spotify.com/v1/me', {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+      const userData = await userResponse.json();
+
+      // Create the playlist
+      const response = await fetch(`https://api.spotify.com/v1/users/${userData.id}/playlists`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          description,
+          public: false
+        })
+      });
+
+      const newPlaylist = await response.json();
+      setPlaylists([newPlaylist, ...playlists]);
+      setIsPlaylistModalOpen(false);
+    } catch (error) {
+      console.error('Error creating playlist:', error);
+    }
+  };
+
+  const addTrackToPlaylist = async (playlistId, track) => {
+    try {
+      const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uris: [`spotify:track:${track.id}`]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add track to playlist');
+      }
+
+      // Show success message or update UI
+      setIsPlaylistSelectionModalOpen(false);
+    } catch (error) {
+      console.error('Error adding track to playlist:', error);
+    }
+  };
+
+  const handleAddToPlaylist = (track) => {
+    setSelectedTrack(track);
+    setIsPlaylistSelectionModalOpen(true);
+  };
 
   if (loading || isLoading) {
     return (
@@ -105,7 +174,9 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
-
+        <div className="lg:col-span-4">
+            <RecommendationSection />
+          </div>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Column - Stats & Analytics */}
           <div className="lg:col-span-3 grid gap-6">
@@ -176,44 +247,7 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          {/* Right Column - Recommended Tracks */}
-          <Card className="col-span-full">
-            <CardHeader>
-              <CardTitle>Recommended Tracks</CardTitle>
-              <CardDescription>Based on your listening history</CardDescription>
-              {!recommendations.length && (
-                <button
-                  onClick={fetchRecommendations}
-                  className="mt-4 bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-full"
-                >
-                  Get Recommendations
-                </button>
-              )}
-            </CardHeader>
-            <CardContent>
-              {recsLoading ? (
-                <div className="flex justify-center p-8">
-                  <Loader className="w-8 h-8 animate-spin text-green-500" />
-                </div>
-              ) : recommendations.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {recommendations.map((track) => (
-                    <div key={track.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                      <img
-                        src={track.image_url || "/api/placeholder/48/48"}
-                        alt={track.name}
-                        className="w-12 h-12 rounded"
-                      />
-                      <div className="ml-3">
-                        <p className="font-medium truncate">{track.name}</p>
-                        <p className="text-sm text-gray-500 truncate">{track.artists.join(', ')}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
+        
 
           {/* Right Column - Recent Activity & Playlists */}
           <div className="space-y-6">
@@ -247,7 +281,10 @@ const Dashboard = () => {
                   <CardTitle>Your Playlists</CardTitle>
                   <CardDescription>Quick access</CardDescription>
                 </div>
-                <button className="p-2 hover:bg-gray-100 rounded-full">
+                <button 
+                  onClick={() => setIsPlaylistModalOpen(true)} 
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                >
                   <Plus className="w-5 h-5" />
                 </button>
               </CardHeader>
@@ -272,6 +309,18 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      <PlaylistModal
+        isOpen={isPlaylistModalOpen}
+        onClose={() => setIsPlaylistModalOpen(false)}
+        onCreatePlaylist={createPlaylist}
+      />
+      <PlaylistSelectionModal
+        isOpen={isPlaylistSelectionModalOpen}
+        onClose={() => setIsPlaylistSelectionModalOpen(false)}
+        playlists={playlists}
+        onSelect={addTrackToPlaylist}
+        track={selectedTrack}
+      />
     </div>
   );
 };

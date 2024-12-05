@@ -38,6 +38,38 @@ SPOTIFY_CLIENT_SECRET=your-spotify-client-secret
     - Configure project: gcloud config set project [PROJECT_ID]
     - Enable required APIs
     - Set up Firebase
+    - Enable required APIS:
+        ```bash
+        gcloud services enable \
+        cloudfunctions.googleapis.com \
+        cloudbuild.googleapis.com \
+        artifactregistry.googleapis.com
+        ```
+    - When you change functions, make sure they're redeployed. Some examples:
+        ```bash
+        # Auth Functions
+        gcloud functions deploy refresh-token \
+        --runtime python39 \
+        --trigger-http \
+        --allow-unauthenticated \
+        --env-vars-file env.yaml \
+        --entry-point refresh_spotify_token
+
+        # Analytics Functions
+        gcloud functions deploy get_listening_history \
+        --runtime python39 \
+        --trigger-http \
+        --allow-unauthenticated \
+        --env-vars-file env.yaml \
+        --entry-point get_listening_history
+
+        gcloud functions deploy get_listening_stats \
+        --runtime python39 \
+        --trigger-http \
+        --allow-unauthenticated \
+        --env-vars-file env.yaml \
+        --entry-point get_listening_stats
+        ```
 7. Setup Spotify Developer Account (If you already have a spotify account just log in with that)
     Needed Variables: 
     - SPOTIFY_CLIENT_ID

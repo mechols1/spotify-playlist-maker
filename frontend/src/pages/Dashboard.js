@@ -144,7 +144,7 @@ const Dashboard = () => {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Top Artists Section - Moved to top */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-background">
           <CardHeader>
             <CardTitle>Top Artists</CardTitle>
             <CardDescription>Your most listened artists</CardDescription>
@@ -153,13 +153,14 @@ const Dashboard = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
               {topArtists?.slice(0, 6).map(artist => (
                 <div key={artist.id} className="text-center group cursor-pointer">
-                  <div className="relative">
+                  <div className="relative w-32 h-32 mx-auto">
+                    <div className="absolute inset-0 rounded-full bg-gray-900/50" />
                     <img
                       src={(artist.images?.[0]?.url) || "/api/placeholder/128/128"}
                       alt={artist.name}
-                      className="w-32 h-32 rounded-full mx-auto transition-transform group-hover:scale-105"
+                      className="absolute inset-0 w-full h-full rounded-full object-cover z-10 transition-transform group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all" />
+                    <div className="absolute inset-0 rounded-full bg-black opacity-0 group-hover:opacity-20 transition-opacity z-20" />
                   </div>
                   <p className="mt-3 font-medium text-sm">{artist.name}</p>
                 </div>
@@ -168,8 +169,8 @@ const Dashboard = () => {
           </CardContent>
         </Card>
         <div className="lg:col-span-4">
-            <RecommendationSection />
-          </div>
+          <RecommendationSection />
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Column - Stats & Analytics */}
           <div className="lg:col-span-3 grid gap-6">
@@ -240,7 +241,7 @@ const Dashboard = () => {
             </Card>
           </div>
 
-        
+
 
           {/* Right Column - Recent Activity & Playlists */}
           <div className="space-y-6">
@@ -274,8 +275,8 @@ const Dashboard = () => {
                   <CardTitle>Your Playlists</CardTitle>
                   <CardDescription>Quick access</CardDescription>
                 </div>
-                <button 
-                  onClick={() => setIsPlaylistModalOpen(true)} 
+                <button
+                  onClick={() => setIsPlaylistModalOpen(true)}
                   className="p-2 hover:bg-gray-100 rounded-full"
                 >
                   <Plus className="w-5 h-5" />

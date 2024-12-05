@@ -27,11 +27,11 @@
 5. Environment Variables:
     - Create env.yaml for Cloud Functions
     Required variables:
-`
+```
 GOOGLE_CLOUD_PROJECT=your-project-id-here
 SPOTIFY_CLIENT_ID=your-spotify-client-id
 SPOTIFY_CLIENT_SECRET=your-spotify-client-secret
-`
+```
 6. Google Cloud Setup:
 
     - Install gcloud CLI

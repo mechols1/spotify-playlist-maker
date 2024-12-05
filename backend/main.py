@@ -284,67 +284,194 @@ def get_listening_history(request):
         print(f"Error in get_listening_history: {str(e)}")
         return jsonify({"error": str(e)}), 500
     
-import time
-
 @functions_framework.http
 @cross_origin(**CORS_CONFIG)
 def get_recommendations(request):
-    start_time = time.time()
-    print("Starting recommendation function...")
-    
     try:
-        # Get user data
         user_id = request.args.get("user_id")
-        print(f"[{time.time() - start_time:.2f}s] Processing request for user_id: {user_id}")
+        print(f"Processing request for user_id: {user_id}")
         
-        # Get user's access token
         user_data = get_user_data(user_id)
         access_token = user_data.get("access_token")
-        print(f"[{time.time() - start_time:.2f}s] Retrieved access token")
-
-        # Get recently played tracks
-        recent_response = requests.get(
-            "https://api.spotify.com/v1/me/player/recently-played?limit=5",
-            headers={"Authorization": f"Bearer {access_token}"},
-            timeout=10  # Add timeout for Spotify API calls
-        )
-        print(f"[{time.time() - start_time:.2f}s] Retrieved recent tracks")
-
-        if recent_response.status_code != 200:
-            print(f"Error response from Spotify: {recent_response.text}")
-            return jsonify({"error": "Failed to fetch recent tracks"}), 500
-            
-        recent_tracks = recent_response.json()
         
-        # Get seed tracks
-        seed_tracks = [item['track']['id'] for item in recent_tracks['items'][:2]]
-        print(f"[{time.time() - start_time:.2f}s] Using seed tracks: {seed_tracks}")
-
-        # Get recommendations
-        rec_response = requests.get(
-            "https://api.spotify.com/v1/recommendations",
-            headers={"Authorization": f"Bearer {access_token}"},
-            params={
-                "seed_tracks": ",".join(seed_tracks),
-                "limit": 10
-            },
-            timeout=10  # Add timeout for recommendations call
+        if not access_token:
+            return jsonify({"error": "No access token found"}), 401
+            
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        
+        # Get user's top artists
+        top_artists_response = requests.get(
+            "https://api.spotify.com/v1/me/top/artists",
+            headers=headers,
+            params={"limit": 5, "time_range": "medium_term"}
         )
-        print(f"[{time.time() - start_time:.2f}s] Retrieved recommendations")
-
-        # Process and return results
-        tracks = [{
-            'id': track['id'],
-            'name': track['name'],
-            'artists': [artist['name'] for artist in track['artists']],
-            'image_url': track['album']['images'][0]['url'] if track['album']['images'] else None,
-            'preview_url': track['preview_url'],
-            'external_url': track['external_urls']['spotify']
-        } for track in rec_response.json()['tracks']]
-
-        print(f"[{time.time() - start_time:.2f}s] Completed processing")
-        return jsonify({"tracks": tracks}), 200
-
+        
+        if top_artists_response.status_code != 200:
+            print(f"Failed to fetch top artists: {top_artists_response.status_code}")
+            return jsonify({"error": "Failed to fetch top artists"}), top_artists_response.status_code
+            
+        top_artists = top_artists_response.json().get('items', [])
+        print(f"Top artists: {top_artists}")
+        
+        # Collect tracks with different strategies
+        all_tracks = []
+        seen_ids = set()
+        
+        # 1. Get tracks from top artists
+        for artist in top_artists:
+            search_response = requests.get(
+                "https://api.spotify.com/v1/search",
+                headers=headers,
+                params={
+                    "q": f"artist:{artist['name']}",
+                    "type": "track",
+                    "limit": 5,
+                    "market": "US"
+                }
+            )
+            
+            if search_response.status_code == 200:
+                tracks = search_response.json().get('tracks', {}).get('items', [])
+                print(f"Tracks for artist {artist['name']}: {tracks}")
+                for track in tracks:
+                    if track['id'] not in seen_ids:
+                        all_tracks.append({
+                            'id': track['id'],
+                            'name': track['name'],
+                            'artists': [artist['name'] for artist in track['artists']],
+                            'image_url': track['album']['images'][0]['url'] if track['album']['images'] else None,
+                            'preview_url': track['preview_url'],
+                            'external_url': track['external_urls']['spotify'],
+                            'popularity': track['popularity']
+                        })
+                        seen_ids.add(track['id'])
+            else:
+                print(f"Failed to fetch tracks for artist {artist['name']}: {search_response.status_code}")
+        
+        # Sort by popularity and take top 10
+        all_tracks.sort(key=lambda x: x['popularity'], reverse=True)
+        recommended_tracks = all_tracks[:10]
+        
+        # Shuffle the final selection to maintain variety
+        import random
+        random.shuffle(recommended_tracks)
+        
+        print(f"Recommended tracks: {recommended_tracks}")
+        return jsonify({"tracks": recommended_tracks}), 200
+        
     except Exception as e:
         print(f"Error in get_recommendations: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+def get_top_artists(headers):
+    """Get user's top artists"""
+    response = requests.get(
+        "https://api.spotify.com/v1/me/top/artists",
+        headers=headers,
+        params={"limit": 5, "time_range": "medium_term"}
+    )
+    if response.status_code != 200:
+        return []
+    return response.json().get('items', [])
+
+def extract_genres(artists):
+    """Extract unique genres from artists"""
+    genres = set()
+    for artist in artists:
+        genres.update(artist.get('genres', []))
+    return list(genres)
+
+def perform_search(headers, query, filters=None):
+    """Perform a Spotify search with filters"""
+    params = {
+        "q": query,
+        "type": "track",
+        "limit": 5,
+        "market": "US"
+    }
+    if filters:
+        params["q"] = f"{params['q']} {filters}"
+    
+    return requests.get(
+        "https://api.spotify.com/v1/search",
+        headers=headers,
+        params=params
+    )
+
+def process_search_results(response, all_tracks, seen_ids, seen_artists, max_per_artist=1):
+    """Process search results with artist and duplicate filtering"""
+    if response.status_code != 200:
+        return
+        
+    tracks = response.json().get('tracks', {}).get('items', [])
+    for track in tracks:
+        if track['id'] not in seen_ids:
+            primary_artist = track['artists'][0]['name']
+            if seen_artists.get(primary_artist, 0) < max_per_artist:
+                all_tracks.append({
+                    'id': track['id'],
+                    'name': track['name'],
+                    'artists': [artist['name'] for artist in track['artists']],
+                    'image_url': track['album']['images'][0]['url'] if track['album']['images'] else None,
+                    'preview_url': track['preview_url'],
+                    'external_url': track['external_urls']['spotify'],
+                    'popularity': track['popularity'],
+                    'release_date': track['album']['release_date']
+                })
+                seen_ids.add(track['id'])
+                seen_artists[primary_artist] = seen_artists.get(primary_artist, 0) + 1
+
+def balance_recommendations(tracks, target_size=10):
+    """Balance recommendations by popularity and release date"""
+    if not tracks:
+        return []
+        
+    # Sort by popularity and date
+    tracks.sort(key=lambda x: (x['popularity'], x['release_date']), reverse=True)
+    
+    # Create balanced selection
+    high_pop = [t for t in tracks if t['popularity'] >= 70][:4]
+    med_pop = [t for t in tracks if 40 <= t['popularity'] < 70][:4]
+    low_pop = [t for t in tracks if t['popularity'] < 40][:2]
+    
+    balanced = high_pop + med_pop + low_pop
+    
+    # Ensure we have enough tracks
+    while len(balanced) < target_size and tracks:
+        remaining = [t for t in tracks if t not in balanced]
+        if not remaining:
+            break
+        balanced.append(remaining[0])
+    
+    # Shuffle the final selection
+    import random
+    random.shuffle(balanced)
+    
+    return balanced[:target_size]
+
+def log_recommendation_metrics(tracks, user_id):
+    """Log recommendation metrics to Firestore"""
+    metrics = {
+        'timestamp': datetime.now(),
+        'total_tracks': len(tracks),
+        'tracks_with_preview': len([t for t in tracks if t['preview_url']]),
+        'unique_artists': len(set(artist for t in tracks for artist in t['artists'])),
+        'avg_popularity': sum(t['popularity'] for t in tracks) / len(tracks),
+        'popularity_distribution': {
+            'high': len([t for t in tracks if t['popularity'] >= 70]),
+            'medium': len([t for t in tracks if 40 <= t['popularity'] < 70]),
+            'low': len([t for t in tracks if t['popularity'] < 40])
+        },
+        'release_dates': {
+            'newest': max(t['release_date'] for t in tracks),
+            'oldest': min(t['release_date'] for t in tracks)
+        }
+    }
+    
+    db = firestore.Client()
+    metrics_ref = db.collection('metrics').document(user_id).collection('recommendations')
+    metrics_ref.add(metrics)
+    

@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSpotifyToken } from '../hooks/useSpotifyToken';
-import { AlertCircle, Loader, PlayCircle, Plus, Clock, BarChart3, PieChart, Activity } from 'lucide-react';
+import { AlertCircle, Loader, PlayCircle, Plus, Clock, PieChart, Activity } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { useListeningHistory } from '../hooks/useListeningHistory';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
+import { ResponsiveContainer, LineChart } from 'recharts';
 import { useListeningStats } from '../hooks/useListeningStats';
 import RecommendationSection from '../components/recommendations/RecommendationSection';
 import PlaylistModal from '../components/playlists/PlaylistModal';
 import PlaylistSelectionModal from '../components/playlists/PlaylistSelectionModal';
-import { useRecommendations } from '../hooks/useRecommendations';
 
 const Dashboard = () => {
   const { accessToken, loading, error } = useSpotifyToken();
@@ -18,11 +17,9 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { history: listeningHistory, loading: historyLoading } = useListeningHistory();
   const { stats, loading: statsLoading } = useListeningStats();
-  const { recommendations, loading: recsLoading, fetchRecommendations } = useRecommendations();
   const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
-  const [userPlaylists, setUserPlaylists] = useState([]);
   const [isPlaylistSelectionModalOpen, setIsPlaylistSelectionModalOpen] = useState(false);
-  const [selectedTrack, setSelectedTrack] = useState(null);
+  const [selectedTrack] = useState(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -116,10 +113,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleAddToPlaylist = (track) => {
-    setSelectedTrack(track);
-    setIsPlaylistSelectionModalOpen(true);
-  };
 
   if (loading || isLoading) {
     return (

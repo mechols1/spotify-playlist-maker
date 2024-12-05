@@ -353,7 +353,7 @@ def get_recommendations(request):
         
         # Sort by popularity and take top 10
         all_tracks.sort(key=lambda x: x['popularity'], reverse=True)
-        recommended_tracks = all_tracks[:10]
+        recommended_tracks = all_tracks[:20]
         
         # Shuffle the final selection to maintain variety
         import random

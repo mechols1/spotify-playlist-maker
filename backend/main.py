@@ -1,5 +1,6 @@
 import os
 import functions_framework
+import time
 from flask import jsonify, redirect, request
 import requests
 from datetime import datetime, timedelta
@@ -39,14 +40,17 @@ CORS_CONFIG = {
 }
 
 
-@retry.Retry(predicate=retry.if_exception_type(Exception))
 def get_user_data(user_id):
-    """Get user data with retry logic"""
-    user_ref = db.collection("users").document(user_id)
-    user_doc = user_ref.get(_retry=True)
-    if not user_doc.exists:
-        raise ValueError("User not found")
-    return user_doc.to_dict()
+    """Get user data without retry logic"""
+    try:
+        user_ref = db.collection("users").document(user_id)
+        user_doc = user_ref.get()  # Remove _retry parameter
+        if not user_doc.exists:
+            raise ValueError("User not found")
+        return user_doc.to_dict()
+    except Exception as e:
+        print(f"Error getting user data: {str(e)}")
+        raise
 
 
 @functions_framework.http
@@ -280,61 +284,55 @@ def get_listening_history(request):
         print(f"Error in get_listening_history: {str(e)}")
         return jsonify({"error": str(e)}), 500
     
+import time
+
 @functions_framework.http
 @cross_origin(**CORS_CONFIG)
 def get_recommendations(request):
-    """Get personalized track recommendations based on user's listening history."""
-    print("Starting recommendation function...")
     start_time = time.time()
+    print("Starting recommendation function...")
     
     try:
+        # Get user data
         user_id = request.args.get("user_id")
-        print(f"Processing request for user_id: {user_id}")
+        print(f"[{time.time() - start_time:.2f}s] Processing request for user_id: {user_id}")
         
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
-
         # Get user's access token
-        print("Fetching user data...")
         user_data = get_user_data(user_id)
         access_token = user_data.get("access_token")
+        print(f"[{time.time() - start_time:.2f}s] Retrieved access token")
 
-        if not access_token:
-            return jsonify({"error": "User not authenticated"}), 401
-
-        # Get user's recently played tracks
-        print("Fetching recently played tracks...")
+        # Get recently played tracks
         recent_response = requests.get(
             "https://api.spotify.com/v1/me/player/recently-played?limit=5",
-            headers={"Authorization": f"Bearer {access_token}"}
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=10  # Add timeout for Spotify API calls
         )
-        
+        print(f"[{time.time() - start_time:.2f}s] Retrieved recent tracks")
+
         if recent_response.status_code != 200:
-            print(f"Error fetching recent tracks: {recent_response.status_code}")
-            print(recent_response.text)
+            print(f"Error response from Spotify: {recent_response.text}")
             return jsonify({"error": "Failed to fetch recent tracks"}), 500
             
         recent_tracks = recent_response.json()
-
-        # Get seed tracks from recent history
-        seed_tracks = [item['track']['id'] for item in recent_tracks['items'][:2]]
-        print(f"Using seed tracks: {seed_tracks}")
-
-        # Get recommendations from Spotify
-        print("Fetching recommendations...")
-        rec_response = requests.get(
-            f"https://api.spotify.com/v1/recommendations?seed_tracks={'%2C'.join(seed_tracks)}&limit=10",
-            headers={"Authorization": f"Bearer {access_token}"}
-        )
         
-        if rec_response.status_code != 200:
-            print(f"Error fetching recommendations: {rec_response.status_code}")
-            print(rec_response.text)
-            return jsonify({"error": "Failed to fetch recommendations"}), 500
-            
-        recommendations = rec_response.json()
+        # Get seed tracks
+        seed_tracks = [item['track']['id'] for item in recent_tracks['items'][:2]]
+        print(f"[{time.time() - start_time:.2f}s] Using seed tracks: {seed_tracks}")
 
-        # Format recommendations for frontend
+        # Get recommendations
+        rec_response = requests.get(
+            "https://api.spotify.com/v1/recommendations",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={
+                "seed_tracks": ",".join(seed_tracks),
+                "limit": 10
+            },
+            timeout=10  # Add timeout for recommendations call
+        )
+        print(f"[{time.time() - start_time:.2f}s] Retrieved recommendations")
+
+        # Process and return results
         tracks = [{
             'id': track['id'],
             'name': track['name'],
@@ -342,13 +340,11 @@ def get_recommendations(request):
             'image_url': track['album']['images'][0]['url'] if track['album']['images'] else None,
             'preview_url': track['preview_url'],
             'external_url': track['external_urls']['spotify']
-        } for track in recommendations['tracks']]
+        } for track in rec_response.json()['tracks']]
 
-        end_time = time.time()
-        print(f"Function completed in {end_time - start_time:.2f} seconds")
-        
+        print(f"[{time.time() - start_time:.2f}s] Completed processing")
         return jsonify({"tracks": tracks}), 200
 
     except Exception as e:
-        print(f"Error getting recommendations: {str(e)}")
+        print(f"Error in get_recommendations: {str(e)}")
         return jsonify({"error": str(e)}), 500

@@ -23,17 +23,19 @@ function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
       <div className="max-w-6xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
-        {/* Hero Section */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-green-600">
-            Spotify Playlist Curator
+          {/* Hero Section */}
+          <h1 className="text-5xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-green-600">
+            BeatForge
           </h1>
+          <h2 className="text-3xl font-semibold mb-6 text-gray-300">
+            Spotify Playlist Curator
+          </h2>
           <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
             Discover, create, and organize your perfect playlists with powerful analytics and personalized recommendations.
           </p>
           <LoginButton />
         </div>
-
         {/* Features Grid */}
         <div className="grid md:grid-cols-2 gap-6 mt-12">
           <FeatureCard

@@ -24,7 +24,7 @@ export const useListeningHistory = () => {
               'Content-Type': 'application/json',
             },
             mode: 'cors',
-            credentials: 'omit'  // Add this line
+            credentials: 'omit' 
           }
         );
 

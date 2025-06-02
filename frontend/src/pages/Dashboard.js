@@ -3,8 +3,7 @@ import { useSpotifyToken } from '../hooks/useSpotifyToken';
 import { AlertCircle, Loader, PlayCircle, Plus, Clock, PieChart, Activity } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { useListeningHistory } from '../hooks/useListeningHistory';
-import { ResponsiveContainer, LineChart } from 'recharts';
-import { useListeningStats } from '../hooks/useListeningStats';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';import { useListeningStats } from '../hooks/useListeningStats';
 import RecommendationSection from '../components/recommendations/RecommendationSection';
 import PlaylistModal from '../components/playlists/PlaylistModal';
 import PlaylistSelectionModal from '../components/playlists/PlaylistSelectionModal';
@@ -233,7 +232,49 @@ const Dashboard = () => {
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={listeningHistory}>
-                      {/* ... chart configuration ... */}
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis
+                        dataKey="date"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        tickFormatter={(value) => `${value}`}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                        }}
+                        formatter={(value, name) => [
+                          `${value} tracks`,
+                          'Tracks Played'
+                        ]}
+                        labelFormatter={(label) => `Day: ${label}`}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="count"
+                        stroke="#10b981"
+                        strokeWidth={3}
+                        dot={{
+                          fill: '#10b981',
+                          strokeWidth: 2,
+                          r: 5
+                        }}
+                        activeDot={{
+                          r: 7,
+                          stroke: '#10b981',
+                          strokeWidth: 2,
+                          fill: '#ffffff'
+                        }}
+                      />
                     </LineChart>
                   </ResponsiveContainer>
                 )}

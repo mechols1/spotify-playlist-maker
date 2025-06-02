@@ -84,5 +84,3 @@ SPOTIFY_CLIENT_SECRET=your-spotify-client-secret
 1. Branch from `dev`
 2. Create PR for review
 3. Merge to `dev` after approval
-
-## Common Issues & Solutions

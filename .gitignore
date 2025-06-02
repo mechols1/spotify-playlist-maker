@@ -7,7 +7,7 @@ yarn.lock
 .env
 .env.local
 .env.*.local
-
+.env.ymal
 # Build output
 build/
 dist/

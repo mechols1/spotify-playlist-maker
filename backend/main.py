@@ -17,6 +17,8 @@ from functions.recommendations.recommendation_operations import (
     process_recommendations,
 )
 import random
+#from llama_cpp import Llama  # For local LLM inference
+import re  # For response parsing
 db = firestore.Client()
 
 
@@ -172,7 +174,7 @@ def refresh_token(request):
 @functions_framework.http
 @cross_origin(**CORS_CONFIG)
 def get_listening_history(request):
-    """Get processed listening history for a user."""
+    """Get processed listening history"""
     try:
         if request.method == "OPTIONS":
             return ("", 204)
@@ -191,27 +193,185 @@ def get_listening_history(request):
         user_data = user_doc.to_dict()
         access_token = user_data.get("access_token")
 
-        # Fetch recently played tracks from Spotify
-        response = requests.get(
-            "https://api.spotify.com/v1/me/player/recently-played?limit=50",
-            headers={"Authorization": f"Bearer {access_token}"},
-        )
+        # SOLUTION 1: Try to get more historical data using pagination
+        all_tracks = []
+        after_timestamp = None
+        max_requests = 10  # Limit to prevent infinite loops
+        requests_made = 0
+        
+        print(f"🔍 Starting paginated fetch for user {user_id}")
+        
+        while requests_made < max_requests:
+            # Build URL with pagination
+            url = "https://api.spotify.com/v1/me/player/recently-played?limit=50"
+            if after_timestamp:
+                url += f"&after={after_timestamp}"
+            
+            print(f"🔍 Request {requests_made + 1}: {url}")
+            
+            response = requests.get(url, headers={"Authorization": f"Bearer {access_token}"})
+            
+            if response.status_code != 200:
+                print(f"❌ API error on request {requests_made + 1}: {response.status_code}")
+                break
+                
+            data = response.json()
+            tracks = data.get("items", [])
+            
+            if not tracks:
+                print(f"✅ No more tracks available")
+                break
+            
+            print(f"✅ Got {len(tracks)} tracks in request {requests_made + 1}")
+            all_tracks.extend(tracks)
+            
+            # Check if we have enough coverage
+            now = datetime.now(pytz.UTC)
+            oldest_track_time = datetime.fromisoformat(tracks[-1]['played_at'].replace('Z', '+00:00'))
+            days_covered = (now - oldest_track_time).days
+            
+            print(f"🔍 Coverage: {days_covered} days back")
+            
+            # Stop if we have 7+ days of data
+            if days_covered >= 7:
+                print(f"✅ Sufficient coverage achieved ({days_covered} days)")
+                break
+            
+            # Get cursor for next page
+            cursors = data.get("cursors", {})
+            after_timestamp = cursors.get("after")
+            
+            if not after_timestamp:
+                print(f"✅ No more pages available")
+                break
+                
+            requests_made += 1
+        
+        print(f"🔍 Total tracks collected: {len(all_tracks)}")
+        
+        # SOLUTION 2: If still not enough data, supplement with stored history
+        if len(all_tracks) < 20:  # Very few tracks
+            print(f"⚠️ Very few recent tracks, checking stored data...")
+            
+            # Try to get cached history from Firestore
+            stored_history_ref = db.collection('users').document(user_id)\
+                                 .collection('analytics').document('listening_history')
+            stored_doc = stored_history_ref.get()
+            
+            if stored_doc.exists:
+                stored_data = stored_doc.to_dict()
+                last_updated = stored_data.get('last_updated')
+                
+                # If stored data is recent (within last 12 hours), use it as fallback
+                if last_updated and isinstance(last_updated, datetime):
+                    hours_old = (datetime.now(pytz.UTC) - last_updated).total_seconds() / 3600
+                    if hours_old < 12:
+                        print(f"✅ Using stored history from {hours_old:.1f} hours ago")
+                        return jsonify({
+                            "history": stored_data.get('daily_counts', []),
+                            "totalHours": stored_data.get('total_hours', 0)
+                        }), 200
 
-        if response.status_code != 200:
-            return jsonify({"error": "Failed to fetch tracks"}), response.status_code
-
-        tracks_data = response.json().get("items", [])
-
-        # Process and store history
-        history = process_listening_history(user_id, tracks_data)
-
-        # Just return the response - @cross_origin will handle CORS headers
-        return jsonify({"history": history}), 200
+        # SOLUTION 3: Better distribution analysis
+        if all_tracks:
+            print(f"🔍 Analyzing {len(all_tracks)} tracks...")
+            
+            # Analyze actual distribution
+            now = datetime.now(pytz.UTC)
+            day_analysis = {}
+            
+            for track in all_tracks:
+                played_at = datetime.fromisoformat(track['played_at'].replace('Z', '+00:00'))
+                days_ago = (now - played_at).days
+                day_name = played_at.strftime('%a')
+                
+                if 0 <= days_ago < 7:
+                    day_analysis[day_name] = day_analysis.get(day_name, 0) + 1
+            
+            print(f"🔍 Distribution: {day_analysis}")
+            
+            # Check for poor distribution
+            days_with_data = len([d for d in day_analysis.values() if d > 0])
+            if days_with_data < 3:
+                print(f"⚠️ Poor distribution: only {days_with_data} days have data")
+        
+        # Process the collected data
+        processed_data = process_listening_history(user_id, all_tracks)
+        
+        # SOLUTION 4: Enhanced response with metadata
+        response_data = {
+            "history": processed_data["history"],
+            "totalHours": processed_data["total_hours"],
+            "metadata": {
+                "tracks_analyzed": len(all_tracks),
+                "api_requests_made": requests_made + 1,
+                "coverage_days": max((datetime.now(pytz.UTC) - 
+                                    datetime.fromisoformat(all_tracks[-1]['played_at'].replace('Z', '+00:00'))).days 
+                                   if all_tracks else 0, 0),
+                "data_quality": "good" if len(all_tracks) >= 30 else "limited"
+            }
+        }
+        
+        print(f"✅ Returning {len(processed_data['history'])} days of data")
+        return jsonify(response_data), 200
 
     except Exception as e:
-        print(f"Error in get_listening_history: {str(e)}")
+        print(f"❌ Error in get_listening_history: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
+
+# Background data collection
+@functions_framework.http 
+def collect_listening_data_background(request):
+    """
+    Background function to collect data throughout the day
+    Call this every few hours to build up historical data
+    """
+    try:
+        # Get all users
+        users_ref = db.collection('users')
+        
+        for user_doc in users_ref.stream():
+            user_id = user_doc.id
+            user_data = user_doc.to_dict()
+            access_token = user_data.get('access_token')
+            
+            if not access_token:
+                continue
+                
+            print(f"🔄 Collecting data for user {user_id}")
+            
+            # Get recent tracks
+            response = requests.get(
+                "https://api.spotify.com/v1/me/player/recently-played?limit=50",
+                headers={"Authorization": f"Bearer {access_token}"}
+            )
+            
+            if response.status_code != 200:
+                continue
+                
+            tracks = response.json().get("items", [])
+            
+            # Store raw tracks for later analysis
+            if tracks:
+                track_storage_ref = db.collection('users').document(user_id)\
+                                    .collection('raw_tracks').document('latest')
+                
+                track_storage_ref.set({
+                    'tracks': tracks,
+                    'collected_at': datetime.now(pytz.UTC),
+                    'count': len(tracks)
+                })
+                
+                print(f"✅ Stored {len(tracks)} tracks for {user_id}")
+        
+        return jsonify({"status": "success"}), 200
+        
+    except Exception as e:
+        print(f"❌ Background collection error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @functions_framework.http
 @cross_origin(**CORS_CONFIG)
@@ -238,51 +398,7 @@ def get_listening_stats(request):
         return jsonify({"error": str(e)}), 500
 
 
-@functions_framework.http
-@cross_origin(**CORS_CONFIG)
-def get_listening_history(request):
-    """Get processed listening history for a user."""
-    try:
-        if request.method == "OPTIONS":
-            return ("", 204)
 
-        user_id = request.args.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Missing user_id"}), 400
-
-        # Get user's access token
-        user_ref = db.collection("users").document(user_id)
-        user_doc = user_ref.get()
-
-        if not user_doc.exists:
-            return jsonify({"error": "User not found"}), 404
-
-        user_data = user_doc.to_dict()
-        access_token = user_data.get("access_token")
-
-        # Fetch recently played tracks from Spotify
-        response = requests.get(
-            "https://api.spotify.com/v1/me/player/recently-played?limit=50",
-            headers={"Authorization": f"Bearer {access_token}"},
-        )
-
-        if response.status_code != 200:
-            return jsonify({"error": "Failed to fetch tracks"}), response.status_code
-
-        tracks_data = response.json().get("items", [])
-
-        # Process and store history
-        processed_data = process_listening_history(user_id, tracks_data)
-        
-        # Extract directly from processed_data to avoid nesting
-        return jsonify({
-            "history": processed_data["history"],  # This should be the array directly
-            "totalHours": processed_data["total_hours"]
-        }), 200
-
-    except Exception as e:
-        print(f"Error in get_listening_history: {str(e)}")
-        return jsonify({"error": str(e)}), 500
     
 @functions_framework.http
 @cross_origin(**CORS_CONFIG)

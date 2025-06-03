@@ -16,6 +16,9 @@ const config = {
 
 export const getSpotifyAuthUrl = () => {
   // Debug logging
+  console.log('DEBUG - REACT_APP_API_URI:', process.env.REACT_APP_API_URI);
+  console.log('DEBUG - config.redirectUri:', config.redirectUri);
+  console.log('DEBUG - Full config:', config);
   console.log('Environment Variables:', {
     clientId: process.env.REACT_APP_SPOTIFY_CLIENT_ID ? 'Present' : 'Missing',
     redirectUri: process.env.REACT_APP_API_URI ? 'Present' : 'Missing'

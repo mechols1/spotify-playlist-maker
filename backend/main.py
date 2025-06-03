@@ -27,7 +27,7 @@ CORS_CONFIG = {
     "origins": [
         "http://localhost:3000",
         "https://localhost:3000",
-        # Add your production domains here when deployed
+        "https://beatforge-ivory.vercel.app",
     ],
     "methods": ["GET", "POST", "OPTIONS"],
     "allow_headers": [
@@ -105,7 +105,7 @@ def spotify_auth(request):
             )
 
             return redirect(
-                f"{frontend_url}/callback/success?auth=success&user_id={profile['id']}"
+                f"{frontend_url}/callback?auth=success&user_id={profile['id']}"
             )
 
         except Exception as e:

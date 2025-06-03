@@ -21,7 +21,7 @@ export const getSpotifyAuthUrl = () => {
   console.log('DEBUG - Full config:', config);
   console.log('Environment Variables:', {
     clientId: process.env.REACT_APP_SPOTIFY_CLIENT_ID ? 'Present' : 'Missing',
-    redirectUri: process.env.REACT_APP_API_URI ? 'Present' : 'Missing'
+    redirectUri: 'https://us-central1-music-curator-442401.cloudfunctions.net/spotify_auth', 
   });
 
   if (!config.clientId) {
